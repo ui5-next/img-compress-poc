@@ -98,8 +98,9 @@ export class CompressFileUploader extends FileUploader<Props> {
   async getProcessedBlobsFromArray(aBlobs: Blob[] = []): Promise<Blob[]> {
     return Promise.all(Array.from(aBlobs).map(async oBlob => {
       try {
-        // is image
+
         if (oBlob.type.startsWith("image")) {
+          // is image
           const fBuffer = await oBlob.arrayBuffer();
           // YOU Must ensure the JIMP object is available in global env.
           // eslint-disable-next-line no-undef
@@ -110,14 +111,16 @@ export class CompressFileUploader extends FileUploader<Props> {
           }
           const compressedBuffer = await img.resize(targetWidth, -1).quality(this.getQuality()).getBufferAsync(img.getMIME());
           const newBlob = new Blob([compressedBuffer], { type: oBlob.type });
+          // assign file.name to blob
           newBlob.name = oBlob.name;
           return newBlob;
         } else {
+          // no image
           return oBlob;
         }
 
       } catch (err) {
-        // compress failed
+        // compress failed, downgrade to original blob file
         return oBlob;
       }
     }));

@@ -5,7 +5,6 @@ import ResponsiveSplitter from "sap/ui/layout/ResponsiveSplitter";
 import PaneContainer from "sap/ui/layout/PaneContainer";
 import SplitPane from "sap/ui/layout/SplitPane";
 import Image from "sap/m/Image";
-import includeScript from "sap/ui/dom/includeScript";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import SimpleForm from "sap/ui/layout/form/SimpleForm";
 import Label from "sap/m/Label";
@@ -18,13 +17,10 @@ import { CompressFileUploader } from "./CompressFileUploader";
 import FlexBox from "sap/m/FlexBox";
 import FlexDirection from "sap/m/FlexDirection";
 import FlexJustifyContent from "sap/m/FlexJustifyContent";
+import "./lib/jimp.min"; // import JIMP library
 
 
 Core.attachInit(async() => {
-
-  // await jimp load finished
-  await includeScript({ url: "https://unpkg.com/jimp@0.8.5/browser/lib/jimp.js" });
-
 
   // init store and state
   const store = new JSONModel({
