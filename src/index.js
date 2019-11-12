@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import Core from "sap/ui/core/Core";
 import App from "sap/m/App";
 import Page from "sap/m/Page";
@@ -15,6 +14,7 @@ import Input from "sap/m/Input";
 import Button from "sap/m/Button";
 import InputType from "sap/m/InputType";
 import NumberFormat from "sap/ui/core/format/NumberFormat";
+import MessageToast from "sap/m/MessageToast";
 
 
 Core.attachInit(async() => {
@@ -42,18 +42,47 @@ Core.attachInit(async() => {
     fr.readAsDataURL(file);
   });
 
+  const actionSetCompressStatus = (busy = true) => {
+    store.setProperty("/compressInProgress", busy);
+  };
+
   const actionCompressFile = async(selectedFile: File) => {
-    store.setProperty("/compressInProgress", true);
+    actionSetCompressStatus(true);
+
     const frBuffer = await selectedFile.arrayBuffer();
+    // eslint-disable-next-line no-undef
     const img = await Jimp.read(frBuffer);
     const compressedImg = img
-      .resize(parseInt(store.getProperty("/maxWidth"), 10), Jimp.AUTO)
+      .resize(parseInt(store.getProperty("/maxWidth"), 10), -1) // -1 means auto
       .quality(parseInt(store.getProperty("/quality"), 10));
     const compressedDataURL = await compressedImg.getBase64Async(img.getMIME());
+
     store.setProperty("/compressedSrc", compressedDataURL);
     store.setProperty("/compressedSize", compressedDataURL.length);
-    store.setProperty("/compressInProgress", false);
+    actionSetCompressStatus(false);
 
+    const compressRate = (compressedDataURL.length / store.getProperty("/originalSrc").length);
+
+    MessageToast.show(`Rate: ${compressRate.toFixed(3)}%`);
+  };
+
+
+
+  const actionOnFileSelected = async(e) => {
+    const selectedFile: File = e.getParameter("files")[0];
+    if (selectedFile) {
+      const dataURL = await readDataURLFromFile(selectedFile);
+      store.setProperty("/originalSrc", dataURL);
+      store.setProperty("/originalSize", dataURL.length);
+      store.setProperty("/selectedFile", selectedFile);
+
+      await actionCompressFile(selectedFile);
+    }
+  };
+
+  const actionOnCompressBtnPress = async() => {
+    const file = store.getProperty("/selectedFile");
+    await actionCompressFile(file);
   };
 
   const app: App = <App
@@ -72,19 +101,7 @@ Core.attachInit(async() => {
                         width="100%"
                         placeholder="Select an image"
                         fileType={["jpg", "png", "gif"]}
-                        change={async(e) => {
-                          const selectedFile: File = e.getParameter("files")[0];
-                          if (selectedFile) {
-                            app.setBusy(true);
-                            const dataURL = await readDataURLFromFile(selectedFile);
-                            store.setProperty("/originalSrc", dataURL);
-                            store.setProperty("/originalSize", dataURL.length);
-                            store.setProperty("/selectedFile", selectedFile);
-
-                            await actionCompressFile(selectedFile);
-                            app.setBusy(false);
-                          }
-                        }}
+                        change={actionOnFileSelected}
                       />
                       <Label>Max Width</Label>
                       <Input value="{/maxWidth}" />
@@ -95,10 +112,8 @@ Core.attachInit(async() => {
                       <Label />
                       <Button
                         text="Do Compress"
-                        press={async() => {
-                          const file = store.getProperty("/selectedFile");
-                          await actionCompressFile(file);
-                        }}
+                        enabled={{ path: "/selectedFile", formatter: v => !!v }}
+                        press={actionOnCompressBtnPress}
                       />
 
                     </SimpleForm>
