@@ -6,8 +6,43 @@ POC Project for pure frontend image compress
 
 ## Points
 
-* Use [JIMP](https://github.com/oliver-moran/jimp) (MIT) to compress images.
+* Use [JIMP](https://github.com/oliver-moran/jimp) (MIT) to compress images, and developer can download release version from [unpkg](https://unpkg.com/jimp@0.8.5/browser/lib/jimp.min.js).
 * Overwrite the `FileUploader.getProcessedBlobsFromArray` to replace the `Blob` objects which will be uploaded.
+
+Core Code
+
+```javascript
+async getProcessedBlobsFromArray(aBlobs: Blob[] = []): Promise<Blob[]> {
+  return Promise.all(Array.from(aBlobs).map(async oBlob => {
+    try {
+
+      if (oBlob.type.startsWith("image")) {
+        // is image
+        const fBuffer = await oBlob.arrayBuffer();
+        // YOU Must ensure the `Jimp` object is available in global env.
+        // eslint-disable-next-line no-undef
+        const img = await Jimp.read(fBuffer);
+        let targetWidth = this.getMaxWidth();
+        if (img.bitmap.width < targetWidth) {
+          targetWidth = img.bitmap.width;
+        }
+        const compressedBuffer = await img.resize(targetWidth, -1).quality(this.getQuality()).getBufferAsync(img.getMIME());
+        const newBlob = new Blob([compressedBuffer], { type: oBlob.type });
+        // assign file.name to blob
+        newBlob.name = oBlob.name;
+        return newBlob;
+      } else {
+        // no image
+        return oBlob;
+      }
+
+    } catch (err) {
+      // compress failed, downgrade to original blob file
+      return oBlob;
+    }
+  }));
+}
+```
 
 ## Risk
 

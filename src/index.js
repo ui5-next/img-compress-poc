@@ -17,10 +17,13 @@ import { CompressFileUploader } from "./CompressFileUploader";
 import FlexBox from "sap/m/FlexBox";
 import FlexDirection from "sap/m/FlexDirection";
 import FlexJustifyContent from "sap/m/FlexJustifyContent";
-import "./lib/jimp.min"; // import JIMP library
+import Link from "sap/m/Link";
+import includeScript from "sap/ui/dom/includeScript";
 
 
 Core.attachInit(async() => {
+
+  await includeScript({ url: "https://unpkg.com/jimp@0.8.5/browser/lib/jimp.min.js" });
 
   // init store and state
   const store = new JSONModel({
@@ -31,7 +34,9 @@ Core.attachInit(async() => {
     compressedSrc: "",
     compressedSize: 0,
     selectedFile: null,
-    compressInProgress: false
+    readingData: false,
+    compressInProgress: false,
+    projectLink: "https://github.com/ui5-next/img-compress-poc"
   });
 
   const readDataURLFromFile = (file: File) => new Promise((resolve, reject) => {
@@ -45,9 +50,12 @@ Core.attachInit(async() => {
     store.setProperty("/compressInProgress", busy);
   };
 
+  const actionSetReadingData = (busy = true) => {
+    store.setProperty("/readingData", busy);
+  };
+
   const actionCompressFile = async(selectedFile: File) => {
     actionSetCompressStatus(true);
-
     const frBuffer = await selectedFile.arrayBuffer();
     // eslint-disable-next-line no-undef
     const img = await Jimp.read(frBuffer);
@@ -65,15 +73,15 @@ Core.attachInit(async() => {
     MessageToast.show(`Rate: ${compressRate.toFixed(3)}%`);
   };
 
-
-
   const actionOnFileSelected = async(e) => {
     const selectedFile: File = e.getParameter("files")[0];
     if (selectedFile) {
+      actionSetReadingData(true);
       const dataURL = await readDataURLFromFile(selectedFile);
       store.setProperty("/originalSrc", dataURL);
       store.setProperty("/originalSize", dataURL.length);
       store.setProperty("/selectedFile", selectedFile);
+      actionSetReadingData(false);
 
       await actionCompressFile(selectedFile);
     }
@@ -93,7 +101,7 @@ Core.attachInit(async() => {
             <PaneContainer
               panes={[
                 <SplitPane >
-                  <Page title="Image Compress POC">
+                  <Page title="Image Compress POC" headerContent={<Link text="Github" href="{/projectLink}" target="_blank" />} >
                     <SimpleForm layout="ResponsiveGridLayout" editable={true} >
                       <Label>Image</Label>
                       <CompressFileUploader
@@ -103,6 +111,7 @@ Core.attachInit(async() => {
                         placeholder="Select an image"
                         fileType={["jpg", "png", "gif"]}
                         change={actionOnFileSelected}
+
                         uploadOnChange={true}
                         compress={true}
                         maxWidth={720}
@@ -116,7 +125,7 @@ Core.attachInit(async() => {
 
                       <Label />
                       <Button
-                        text="Do Compress"
+                        text="Do compress"
                         enabled={{ path: "/selectedFile", formatter: v => !!v }}
                         press={actionOnCompressBtnPress}
                       />
@@ -128,7 +137,11 @@ Core.attachInit(async() => {
                   orientation="Vertical"
                   panes={[
                     <SplitPane>
-                      <Page title="Original Image ({/originalSize})">
+                      <Page
+                        title="Original Image ({/originalSize})"
+                        busyIndicatorDelay={0}
+                        busy="{/readingData}"
+                      >
                         <FlexBox width="100%" height="100%" direction={FlexDirection.Row} justifyContent={FlexJustifyContent.Center}
                           items={[
                             <Image src="{/originalSrc}" height="99%" />
