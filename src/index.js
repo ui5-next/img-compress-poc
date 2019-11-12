@@ -4,7 +4,6 @@ import Page from "sap/m/Page";
 import ResponsiveSplitter from "sap/ui/layout/ResponsiveSplitter";
 import PaneContainer from "sap/ui/layout/PaneContainer";
 import SplitPane from "sap/ui/layout/SplitPane";
-import FileUploader from "sap/ui/commons/FileUploader";
 import Image from "sap/m/Image";
 import includeScript from "sap/ui/dom/includeScript";
 import JSONModel from "sap/ui/model/json/JSONModel";
@@ -15,6 +14,10 @@ import Button from "sap/m/Button";
 import InputType from "sap/m/InputType";
 import NumberFormat from "sap/ui/core/format/NumberFormat";
 import MessageToast from "sap/m/MessageToast";
+import { CompressFileUploader } from "./CompressFileUploader";
+import FlexBox from "sap/m/FlexBox";
+import FlexDirection from "sap/m/FlexDirection";
+import FlexJustifyContent from "sap/m/FlexJustifyContent";
 
 
 Core.attachInit(async() => {
@@ -61,7 +64,7 @@ Core.attachInit(async() => {
     store.setProperty("/compressedSize", compressedDataURL.length);
     actionSetCompressStatus(false);
 
-    const compressRate = (compressedDataURL.length / store.getProperty("/originalSrc").length);
+    const compressRate = (compressedDataURL.length / store.getProperty("/originalSrc").length) * 100;
 
     MessageToast.show(`Rate: ${compressRate.toFixed(3)}%`);
   };
@@ -97,11 +100,17 @@ Core.attachInit(async() => {
                   <Page title="Image Compress POC">
                     <SimpleForm layout="ResponsiveGridLayout" editable={true} >
                       <Label>Image</Label>
-                      <FileUploader
+                      <CompressFileUploader
+                        name="file"
+                        sendXHR={true}
                         width="100%"
                         placeholder="Select an image"
                         fileType={["jpg", "png", "gif"]}
                         change={actionOnFileSelected}
+                        uploadOnChange={true}
+                        compress={true}
+                        maxWidth={720}
+                        quality={50}
                       />
                       <Label>Max Width</Label>
                       <Input value="{/maxWidth}" />
@@ -124,7 +133,11 @@ Core.attachInit(async() => {
                   panes={[
                     <SplitPane>
                       <Page title="Original Image ({/originalSize})">
-                        <Image src="{/originalSrc}" height="99%" />
+                        <FlexBox width="100%" height="100%" direction={FlexDirection.Row} justifyContent={FlexJustifyContent.Center}
+                          items={[
+                            <Image src="{/originalSrc}" height="99%" />
+                          ]}
+                        />
                       </Page>
                     </SplitPane>,
                     <SplitPane>
@@ -133,7 +146,11 @@ Core.attachInit(async() => {
                         busy="{/compressInProgress}"
                         busyIndicatorDelay={0}
                       >
-                        <Image src="{/compressedSrc}" height="99%" />
+                        <FlexBox width="100%" height="100%" direction={FlexDirection.Row} justifyContent={FlexJustifyContent.Center}
+                          items={[
+                            <Image src="{/compressedSrc}" height="99%" />
+                          ]}
+                        />
                       </Page>
                     </SplitPane>
                   ]}
