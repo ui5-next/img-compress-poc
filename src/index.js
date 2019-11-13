@@ -56,21 +56,31 @@ Core.attachInit(async() => {
 
   const actionCompressFile = async(selectedFile: File) => {
     actionSetCompressStatus(true);
-    const frBuffer = await selectedFile.arrayBuffer();
-    // eslint-disable-next-line no-undef
-    const img = await Jimp.read(frBuffer);
-    const compressedImg = img
-      .resize(parseInt(store.getProperty("/maxWidth"), 10), -1) // -1 means auto
-      .quality(parseInt(store.getProperty("/quality"), 10));
-    const compressedDataURL = await compressedImg.getBase64Async(img.getMIME());
+    try {
+      const frBuffer = await selectedFile.arrayBuffer();
+      // eslint-disable-next-line no-undef
+      const img = await Jimp.read(frBuffer);
+      const compressedImg = img
+        .resize(parseInt(store.getProperty("/maxWidth"), 10), -1) // -1 means auto
+        .quality(parseInt(store.getProperty("/quality"), 10));
+      const compressedDataURL = await compressedImg.getBase64Async(selectedFile.type);
 
-    store.setProperty("/compressedSrc", compressedDataURL);
-    store.setProperty("/compressedSize", compressedDataURL.length);
+      store.setProperty("/compressedSrc", compressedDataURL);
+      store.setProperty("/compressedSize", compressedDataURL.length);
+
+      const compressRate = (compressedDataURL.length / store.getProperty("/originalSrc").length) * 100;
+
+      MessageToast.show(`Compress rate: ${compressRate.toFixed(3)}%`, { duration: 6 * 1000 });
+
+    } catch (error) {
+
+      // failed
+      MessageToast.show(`Compress failed: ${error}`);
+
+    }
+
     actionSetCompressStatus(false);
 
-    const compressRate = (compressedDataURL.length / store.getProperty("/originalSrc").length) * 100;
-
-    MessageToast.show(`Rate: ${compressRate.toFixed(3)}%`);
   };
 
   const actionOnFileSelected = async(e) => {
@@ -92,6 +102,14 @@ Core.attachInit(async() => {
     await actionCompressFile(file);
   };
 
+
+  const actionOnImgClick = (e) => {
+    const img = e.getSource().getDomRef();
+    if (img) {
+      img.requestFullscreen();
+    }
+  };
+
   const app: App = <App
     busyIndicatorDelay={0}
     pages={
@@ -100,7 +118,7 @@ Core.attachInit(async() => {
           rootPaneContainer={
             <PaneContainer
               panes={[
-                <SplitPane >
+                <SplitPane>
                   <Page title="Image Compress POC" headerContent={<Link text="Github" href="{/projectLink}" target="_blank" />} >
                     <SimpleForm layout="ResponsiveGridLayout" editable={true} >
                       <Label>Image</Label>
@@ -144,7 +162,7 @@ Core.attachInit(async() => {
                       >
                         <FlexBox width="100%" height="100%" direction={FlexDirection.Row} justifyContent={FlexJustifyContent.Center}
                           items={[
-                            <Image src="{/originalSrc}" height="99%" />
+                            <Image src="{/originalSrc}" height="99%" press={actionOnImgClick} />
                           ]}
                         />
                       </Page>
@@ -157,7 +175,7 @@ Core.attachInit(async() => {
                       >
                         <FlexBox width="100%" height="100%" direction={FlexDirection.Row} justifyContent={FlexJustifyContent.Center}
                           items={[
-                            <Image src="{/compressedSrc}" height="99%" />
+                            <Image src="{/compressedSrc}" height="99%" press={actionOnImgClick} />
                           ]}
                         />
                       </Page>
