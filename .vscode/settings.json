@@ -18,6 +18,7 @@
         "preload",
         "sourcemap",
         "thirdparty",
-        "unfavorite"
+        "unfavorite",
+        "unpkg"
     ]
 }

@@ -74,6 +74,7 @@ var copy = ({ preload = false, offline = false }) => {
         theme: "sap_fiori_3",
         bootScriptPath: "./index.js",
         ui5ResourceRoot: resourceRoot,
+        withLoadingSpinner: true,
         preload,
         offline,
         sourceDir: join(__dirname, "./src"),

@@ -26,7 +26,10 @@ async getProcessedBlobsFromArray(aBlobs: Blob[] = []): Promise<Blob[]> {
         if (img.bitmap.width < targetWidth) {
           targetWidth = img.bitmap.width;
         }
-        const compressedBuffer = await img.resize(targetWidth, -1).quality(this.getQuality()).getBufferAsync(img.getMIME());
+        const compressedBuffer = await img
+          .resize(targetWidth, -1)
+          .quality(this.getQuality())
+          .getBufferAsync(oBlob.type);
         const newBlob = new Blob([compressedBuffer], { type: oBlob.type });
         // assign file.name to blob
         newBlob.name = oBlob.name;

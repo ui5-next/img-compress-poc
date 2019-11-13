@@ -23,7 +23,13 @@ import includeScript from "sap/ui/dom/includeScript";
 
 Core.attachInit(async() => {
 
+  // loading the JIMP library from unpkg
   await includeScript({ url: "https://unpkg.com/jimp@0.8.5/browser/lib/jimp.min.js" });
+
+  // stop/hide the loading spinner in the screen center
+  if (window.loadingSpinner) {
+    window.loadingSpinner.stop();
+  }
 
   // init store and state
   const store = new JSONModel({
