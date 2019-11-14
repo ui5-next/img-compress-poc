@@ -10,8 +10,6 @@ import SimpleForm from "sap/ui/layout/form/SimpleForm";
 import Label from "sap/m/Label";
 import Input from "sap/m/Input";
 import Button from "sap/m/Button";
-import InputType from "sap/m/InputType";
-import NumberFormat from "sap/ui/core/format/NumberFormat";
 import MessageToast from "sap/m/MessageToast";
 import { CompressFileUploader } from "./CompressFileUploader";
 import FlexBox from "sap/m/FlexBox";
@@ -19,6 +17,10 @@ import FlexDirection from "sap/m/FlexDirection";
 import FlexJustifyContent from "sap/m/FlexJustifyContent";
 import Link from "sap/m/Link";
 import includeScript from "sap/ui/dom/includeScript";
+import SplitterLayoutData from "sap/ui/layout/SplitterLayoutData";
+import Switch from "sap/m/Switch";
+import InputType from "sap/m/InputType";
+import Float from "sap/ui/model/type/Float";
 
 
 Core.attachInit(async() => {
@@ -26,19 +28,16 @@ Core.attachInit(async() => {
   // loading the JIMP library from unpkg
   await includeScript({ url: "https://unpkg.com/jimp@0.8.5/browser/lib/jimp.min.js" });
 
-  // stop/hide the loading spinner in the screen center
-  if (window.loadingSpinner) {
-    window.loadingSpinner.stop();
-  }
-
   // init store and state
   const store = new JSONModel({
     maxWidth: 720,
     quality: 70,
+    fakeUpload: true,
     originalSrc: "",
     originalSize: 0,
     compressedSrc: "",
     compressedSize: 0,
+    compressRate: 100,
     selectedFile: null,
     readingData: false,
     compressInProgress: false,
@@ -66,22 +65,24 @@ Core.attachInit(async() => {
       const frBuffer = await selectedFile.arrayBuffer();
       // eslint-disable-next-line no-undef
       const img = await Jimp.read(frBuffer);
-      let targetWidth = parseInt(store.getProperty("/maxWidth"), 10);
+      let targetWidth = store.getProperty("/maxWidth");
       let compressedImg = img;
 
       if (img.bitmap.width > targetWidth) {
         compressedImg = img.resize(targetWidth, -1);
       }
 
-      compressedImg = compressedImg.quality(parseInt(store.getProperty("/quality"), 10));
+      compressedImg = compressedImg.quality(store.getProperty("/quality"));
       const compressedDataURL = await compressedImg.getBase64Async(selectedFile.type);
 
       store.setProperty("/compressedSrc", compressedDataURL);
       store.setProperty("/compressedSize", compressedDataURL.length);
 
-      const compressRate = (compressedDataURL.length / store.getProperty("/originalSrc").length) * 100;
+      const compressRate = ((compressedDataURL.length / store.getProperty("/originalSrc").length) * 100).toFixed(4);
 
-      MessageToast.show(`Compress rate: ${compressRate.toFixed(3)}%`, { duration: 6 * 1000 });
+      store.setProperty("/compressRate", compressRate);
+
+      MessageToast.show(`Compress rate: ${compressRate}%`, { duration: 6 * 1000 });
 
     } catch (error) {
 
@@ -122,14 +123,13 @@ Core.attachInit(async() => {
   };
 
   const app: App = <App
-    busyIndicatorDelay={0}
     pages={
       <Page showHeader={false}>
         <ResponsiveSplitter
           rootPaneContainer={
             <PaneContainer
               panes={[
-                <SplitPane>
+                <SplitPane layoutData={<SplitterLayoutData size="25%" />}>
                   <Page title="Image Compress POC" headerContent={<Link text="Github" href="{/projectLink}" target="_blank" />} >
                     <SimpleForm layout="ResponsiveGridLayout" editable={true} >
                       <Label>Image</Label>
@@ -138,19 +138,21 @@ Core.attachInit(async() => {
                         sendXHR={true}
                         width="100%"
                         placeholder="Select an image"
-                        fileType={["jpg", "png", "gif"]}
+                        fileType={["jpg", "jpeg", "png", "gif"]}
                         change={actionOnFileSelected}
-
-                        uploadOnChange={true}
+                        uploadOnChange="{/fakeUpload}"
                         compress={true}
-                        maxWidth={720}
-                        quality={50}
+                        maxWidth={{ path: "/maxWidth", type: <Float /> }}
+                        quality={{ path: "/quality", type: <Float /> }}
                       />
                       <Label>Max Width</Label>
-                      <Input value="{/maxWidth}" />
+                      <Input value={{ path: "/maxWidth", type: <Float /> }} type={InputType.Number} />
 
                       <Label>Quality</Label>
-                      <Input value="{/quality}" type={InputType.Number} dateFormat={NumberFormat} />
+                      <Input value={{ path: "/quality", type: <Float /> }} type={InputType.Number} />
+
+                      <Label tooltip="uploader will do upload after file selected" >Enable Fake Upload</Label>
+                      <Switch state="{/fakeUpload}" />
 
                       <Label />
                       <Button
@@ -166,11 +168,7 @@ Core.attachInit(async() => {
                   orientation="Vertical"
                   panes={[
                     <SplitPane>
-                      <Page
-                        title="Original Image ({/originalSize})"
-                        busyIndicatorDelay={0}
-                        busy="{/readingData}"
-                      >
+                      <Page title="Original Image" busyIndicatorDelay={0} busy="{/readingData}">
                         <FlexBox width="100%" height="100%" direction={FlexDirection.Row} justifyContent={FlexJustifyContent.Center}
                           items={[
                             <Image src="{/originalSrc}" height="99%" press={actionOnImgClick} />
@@ -180,7 +178,7 @@ Core.attachInit(async() => {
                     </SplitPane>,
                     <SplitPane>
                       <Page
-                        title="Compressed Image ({/compressedSize})"
+                        title="Compressed Image ({/compressRate}%) "
                         busy="{/compressInProgress}"
                         busyIndicatorDelay={0}
                       >
@@ -203,5 +201,10 @@ Core.attachInit(async() => {
   />;
 
   app.setModel(store).placeAt("content");
+
+  // stop/hide the loading spinner in the screen center
+  if (window.loadingSpinner) {
+    window.loadingSpinner.stop();
+  }
 
 });

@@ -2,7 +2,6 @@ import FileUploader from "sap/ui/unified/FileUploader";
 import containsOrEquals from "sap/ui/dom/containsOrEquals";
 import MessageToast from "sap/m/MessageToast";
 
-
 interface Props {
   /**
    * compress images,
@@ -122,6 +121,7 @@ export class CompressFileUploader extends FileUploader<Props> {
           const newBlob = new Blob([compressedBuffer], { type: oBlob.type });
           // assign file.name to blob
           newBlob.name = oBlob.name;
+
           return newBlob;
         } else {
           // no image
