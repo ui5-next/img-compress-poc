@@ -34,7 +34,7 @@ Core.attachInit(async() => {
   // init store and state
   const store = new JSONModel({
     maxWidth: 720,
-    quality: 90,
+    quality: 70,
     originalSrc: "",
     originalSize: 0,
     compressedSrc: "",
@@ -66,9 +66,14 @@ Core.attachInit(async() => {
       const frBuffer = await selectedFile.arrayBuffer();
       // eslint-disable-next-line no-undef
       const img = await Jimp.read(frBuffer);
-      const compressedImg = img
-        .resize(parseInt(store.getProperty("/maxWidth"), 10), -1) // -1 means auto
-        .quality(parseInt(store.getProperty("/quality"), 10));
+      let targetWidth = parseInt(store.getProperty("/maxWidth"), 10);
+      let compressedImg = img;
+
+      if (img.bitmap.width > targetWidth) {
+        compressedImg = img.resize(targetWidth, -1);
+      }
+
+      compressedImg = compressedImg.quality(parseInt(store.getProperty("/quality"), 10));
       const compressedDataURL = await compressedImg.getBase64Async(selectedFile.type);
 
       store.setProperty("/compressedSrc", compressedDataURL);

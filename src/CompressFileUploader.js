@@ -1,5 +1,6 @@
 import FileUploader from "sap/ui/unified/FileUploader";
 import containsOrEquals from "sap/ui/dom/containsOrEquals";
+import MessageToast from "sap/m/MessageToast";
 
 
 interface Props {
@@ -95,7 +96,7 @@ export class CompressFileUploader extends FileUploader<Props> {
     return this;
   }
 
-  async getProcessedBlobsFromArray(aBlobs: Blob[] = []): Promise<Blob[]> {
+  async getProcessedBlobsFromArray(aBlobs: FileList): Promise<Blob[]> {
     return Promise.all(Array.from(aBlobs).map(async oBlob => {
       try {
 
@@ -105,11 +106,19 @@ export class CompressFileUploader extends FileUploader<Props> {
           // YOU Must ensure the JIMP object is available in global env.
           // eslint-disable-next-line no-undef
           const img = await Jimp.read(fBuffer);
+
           let targetWidth = this.getMaxWidth();
-          if (img.bitmap.width < targetWidth) {
-            targetWidth = img.bitmap.width;
+
+          let compressedImg = img;
+
+          if (img.bitmap.width > targetWidth) {
+            compressedImg = img.resize(targetWidth, -1);
           }
-          const compressedBuffer = await img.resize(targetWidth, -1).quality(this.getQuality()).getBufferAsync(oBlob.type);
+
+          compressedImg = compressedImg.quality(this.getQuality());
+
+          const compressedBuffer = await compressedImg.getBufferAsync(oBlob.type);
+
           const newBlob = new Blob([compressedBuffer], { type: oBlob.type });
           // assign file.name to blob
           newBlob.name = oBlob.name;
@@ -121,6 +130,7 @@ export class CompressFileUploader extends FileUploader<Props> {
 
       } catch (err) {
         // compress failed, downgrade to original blob file
+        MessageToast.show(`compress img failed, ${err}`);
         return oBlob;
       }
     }));
