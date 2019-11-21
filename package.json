@@ -16,7 +16,7 @@
   "ui5": {
     "namespace": "ui5.lab.compress",
     "build": {
-      "resource": "https://openui5.hana.ondemand.com/1.71.3/resources/",
+      "resource": "https://openui5.hana.ondemand.com/1.72.0/resources/",
       "src": "./src",
       "dist": "./dist",
       "offline": false
