@@ -151,8 +151,8 @@ Core.attachInit(async() => {
                         change={actionOnFileSelected}
                         uploadOnChange="{/fakeUpload}"
                         compress={true}
-                        maxWidth={{ path: "/maxWidth", type: <Float /> }}
-                        quality={{ path: "/quality", type: <Float /> }}
+                        maxWidth={{ path: "/maxWidth", type: <Integer /> }}
+                        quality={{ path: "/quality", type: <Integer /> }}
                       />
                       <Label>Max Width</Label>
                       <Input value={{ path: "/maxWidth", type: <Integer /> }} type={InputType.Number} />
