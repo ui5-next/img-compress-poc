@@ -20,7 +20,6 @@ import includeScript from "sap/ui/dom/includeScript";
 import SplitterLayoutData from "sap/ui/layout/SplitterLayoutData";
 import Switch from "sap/m/Switch";
 import InputType from "sap/m/InputType";
-import Float from "sap/ui/model/type/Float";
 import Integer from "sap/ui/model/type/Integer";
 
 
