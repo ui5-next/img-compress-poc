@@ -21,6 +21,7 @@ import SplitterLayoutData from "sap/ui/layout/SplitterLayoutData";
 import Switch from "sap/m/Switch";
 import InputType from "sap/m/InputType";
 import Float from "sap/ui/model/type/Float";
+import Integer from "sap/ui/model/type/Integer";
 
 
 Core.attachInit(async() => {
@@ -65,6 +66,10 @@ Core.attachInit(async() => {
       const frBuffer = await selectedFile.arrayBuffer();
       // eslint-disable-next-line no-undef
       const img = await Jimp.read(frBuffer);
+
+      const originalSrc = store.getProperty("/originalSrc");
+      const originalSrcSize = originalSrc.length;
+
       let targetWidth = store.getProperty("/maxWidth");
       let compressedImg = img;
 
@@ -73,12 +78,16 @@ Core.attachInit(async() => {
       }
 
       compressedImg = compressedImg.quality(store.getProperty("/quality"));
-      const compressedDataURL = await compressedImg.getBase64Async(selectedFile.type);
+      let compressedDataURL = await compressedImg.getBase64Async(selectedFile.type);
+
+      if (compressedDataURL.length > originalSrcSize) {
+        compressedDataURL = originalSrc;
+      }
 
       store.setProperty("/compressedSrc", compressedDataURL);
       store.setProperty("/compressedSize", compressedDataURL.length);
 
-      const compressRate = ((compressedDataURL.length / store.getProperty("/originalSrc").length) * 100).toFixed(4);
+      const compressRate = ((compressedDataURL.length / originalSrcSize) * 100).toFixed(4);
 
       store.setProperty("/compressRate", compressRate);
 
@@ -146,10 +155,10 @@ Core.attachInit(async() => {
                         quality={{ path: "/quality", type: <Float /> }}
                       />
                       <Label>Max Width</Label>
-                      <Input value={{ path: "/maxWidth", type: <Float /> }} type={InputType.Number} />
+                      <Input value={{ path: "/maxWidth", type: <Integer /> }} type={InputType.Number} />
 
                       <Label>Quality</Label>
-                      <Input value={{ path: "/quality", type: <Float /> }} type={InputType.Number} />
+                      <Input value={{ path: "/quality", type: <Integer /> }} type={InputType.Number} />
 
                       <Label tooltip="uploader will do upload after file selected" >Enable Fake Upload</Label>
                       <Switch state="{/fakeUpload}" />
