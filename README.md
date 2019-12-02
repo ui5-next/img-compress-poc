@@ -12,39 +12,52 @@ POC Project for pure frontend image compress
 Core Code
 
 ```javascript
-async getProcessedBlobsFromArray(aBlobs: Blob[] = []): Promise<Blob[]> {
-  return Promise.all(Array.from(aBlobs).map(async oBlob => {
-    try {
+  async getProcessedBlobsFromArray(aBlobs: FileList): Promise<Blob[]> {
+    return Promise.all(Array.from(aBlobs).map(async oBlob => {
+      try {
 
-      if (oBlob.type.startsWith("image")) {
-        // is image
-        const fBuffer = await oBlob.arrayBuffer();
-        // YOU Must ensure the `Jimp` object is available in global env.
-        // eslint-disable-next-line no-undef
-        const img = await Jimp.read(fBuffer);
-        let targetWidth = this.getMaxWidth();
-        if (img.bitmap.width < targetWidth) {
-          targetWidth = img.bitmap.width;
+        if (oBlob.type.startsWith("image")) {
+          // is image
+          const fBuffer = await oBlob.arrayBuffer();
+          // YOU Must ensure the JIMP object is available in global env.
+          // eslint-disable-next-line no-undef
+          const img = await Jimp.read(fBuffer);
+
+          let targetWidth = this.getMaxWidth();
+
+          let compressedImg = img;
+
+          if (img.bitmap.width > targetWidth) {
+            compressedImg = img.resize(targetWidth, -1);
+          }
+
+          compressedImg = compressedImg.quality(this.getQuality());
+
+          const compressedBuffer = await compressedImg.getBufferAsync(oBlob.type);
+
+          const newBlob = new Blob([compressedBuffer], { type: oBlob.type });
+          // assign file.name to blob
+          newBlob.name = oBlob.name;
+
+          // sometimes, compressed image will be bigger than the original size
+          if(newBlob.size > oBlob.size){
+            return oBlob;
+          } else {
+            return newBlob;
+          }
+
+        } else {
+          // no image
+          return oBlob;
         }
-        const compressedBuffer = await img
-          .resize(targetWidth, -1)
-          .quality(this.getQuality())
-          .getBufferAsync(oBlob.type);
-        const newBlob = new Blob([compressedBuffer], { type: oBlob.type });
-        // assign file.name to blob
-        newBlob.name = oBlob.name;
-        return newBlob;
-      } else {
-        // no image
+
+      } catch (err) {
+        // compress failed, downgrade to original blob file
+        MessageToast.show(`compress img failed, ${err}`);
         return oBlob;
       }
-
-    } catch (err) {
-      // compress failed, downgrade to original blob file
-      return oBlob;
-    }
-  }));
-}
+    }));
+  }
 ```
 
 ## Risk
