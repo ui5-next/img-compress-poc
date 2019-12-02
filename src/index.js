@@ -26,7 +26,7 @@ import Integer from "sap/ui/model/type/Integer";
 Core.attachInit(async() => {
 
   // loading the JIMP library from unpkg
-  await includeScript({ url: "https://unpkg.com/jimp@0.8.5/browser/lib/jimp.min.js" });
+  await includeScript({ url: "https://unpkg.com/jimp@0.6.5/browser/lib/jimp.min.js" });
 
   // init store and state
   const store = new JSONModel({
