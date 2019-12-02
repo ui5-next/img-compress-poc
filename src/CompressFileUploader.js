@@ -122,7 +122,7 @@ export class CompressFileUploader extends FileUploader<Props> {
           // assign file.name to blob
           newBlob.name = oBlob.name;
 
-          // sometimes, compressed image will be bigger than the original size
+          // Sometimes the compressed image will be larger than the original size
           if(newBlob.size > oBlob.size){
             return oBlob;
           } else {
