@@ -33,7 +33,7 @@
     "@ui5-next/types": "latest",
     "babel-eslint": "^10",
     "babel-preset-ui5-next": "^7.2.2",
-    "browser-sync": "2.26.7",
+    "browser-sync": "2.27.10",
     "del": "^5",
     "eslint": "^6",
     "eslint-plugin-react": "^7",
